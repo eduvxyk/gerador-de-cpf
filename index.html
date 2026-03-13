@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerador de CPF</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; }
+    .cpf-display { font-size: 2.5rem; letter-spacing: 4px; }
+  </style>
+</head>
+<body class="bg-zinc-900 text-white min-h-screen flex items-center justify-center">
+  <div class="max-w-md w-full bg-zinc-800 rounded-3xl shadow-2xl p-8">
+    <h1 class="text-4xl font-bold text-center mb-8 text-emerald-400">Gerador de CPF</h1>
+
+    <!-- Gerador -->
+    <div class="mb-10">
+      <button onclick="gerarCPF()" 
+              class="w-full bg-emerald-500 hover:bg-emerald-600 transition py-4 rounded-2xl text-xl font-semibold">
+        Gerar CPF Válido
+      </button>
+      
+      <div id="cpfGerado" 
+           class="cpf-display text-center mt-8 bg-zinc-900 p-6 rounded-2xl border-2 border-emerald-500 font-mono">
+        XXX.XXX.XXX-XX
+      </div>
+      
+      <button onclick="copiarCPF()" 
+              class="mt-4 w-full bg-zinc-700 hover:bg-zinc-600 transition py-3 rounded-2xl text-sm">
+        📋 Copiar CPF
+      </button>
+    </div>
+
+    <!-- Validador -->
+    <div class="border-t border-zinc-700 pt-8">
+      <h2 class="text-2xl font-semibold mb-4 text-center">Validar CPF</h2>
+      <input type="text" id="cpfInput" maxlength="14"
+             class="w-full bg-zinc-900 border border-zinc-600 focus:border-emerald-400 rounded-2xl px-6 py-4 text-2xl text-center font-mono tracking-widest"
+             placeholder="000.000.000-00" onkeyup="formatarInput(this)">
+      
+      <button onclick="validarCPF()" 
+              class="mt-4 w-full bg-blue-600 hover:bg-blue-700 transition py-4 rounded-2xl text-xl font-semibold">
+        Validar
+      </button>
+      
+      <div id="resultadoValidacao" class="mt-6 text-center text-xl font-semibold"></div>
+    </div>
+    
+    <p class="text-xs text-zinc-500 text-center mt-10">
+      Gerado com o algoritmo oficial da Receita Federal
+    </p>
+  </div>
+
+  <script>
+    function formatarCPF(cpf) {
+      cpf = cpf.replace(/\D/g, '');
+      if (cpf.length > 11) cpf = cpf.slice(0, 11);
+      return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    }
+
+    function gerarCPF() {
+      let numeros = [];
+      for (let i = 0; i < 9; i++) {
+        numeros.push(Math.floor(Math.random() * 10));
+      }
+
+      // Primeiro dígito verificador
+      let soma = 0;
+      for (let i = 0; i < 9; i++) soma += numeros[i] * (10 - i);
+      let resto = soma % 11;
+      let dv1 = resto < 2 ? 0 : 11 - resto;
+      numeros.push(dv1);
+
+      // Segundo dígito verificador
+      soma = 0;
+      for (let i = 0; i < 10; i++) soma += numeros[i] * (11 - i);
+      resto = soma % 11;
+      let dv2 = resto < 2 ? 0 : 11 - resto;
+      numeros.push(dv2);
+
+      const cpfFormatado = formatarCPF(numeros.join(''));
+      document.getElementById('cpfGerado').textContent = cpfFormatado;
+    }
+
+    function copiarCPF() {
+      const cpf = document.getElementById('cpfGerado').textContent;
+      if (cpf === 'XXX.XXX.XXX-XX') return;
+      navigator.clipboard.writeText(cpf).then(() => {
+        alert('✅ CPF copiado para a área de transferência!');
+      });
+    }
+
+    function formatarInput(input) {
+      input.value = formatarCPF(input.value);
+    }
+
+    function validarCPF() {
+      let cpf = document.getElementById('cpfInput').value.replace(/\D/g, '');
+      const resultado = document.getElementById('resultadoValidacao');
+      
+      if (cpf.length !== 11) {
+        resultado.innerHTML = '❌ CPF deve ter 11 dígitos';
+        resultado.className = 'text-red-400';
+        return;
+      }
+
+      // Verifica sequência de números iguais
+      if (/^(\d)\1{10}$/.test(cpf)) {
+        resultado.innerHTML = '❌ CPF inválido (todos dígitos iguais)';
+        resultado.className = 'text-red-400';
+        return;
+      }
+
+      // Cálculo dos dígitos verificadores
+      let soma = 0;
+      for (let i = 0; i < 9; i++) soma += parseInt(cpf[i]) * (10 - i);
+      let resto = soma % 11;
+      let dv1 = resto < 2 ? 0 : 11 - resto;
+
+      soma = 0;
+      for (let i = 0; i < 10; i++) soma += parseInt(cpf[i]) * (11 - i);
+      resto = soma % 11;
+      let dv2 = resto < 2 ? 0 : 11 - resto;
+
+      if (parseInt(cpf[9]) === dv1 && parseInt(cpf[10]) === dv2) {
+        resultado.innerHTML = '✅ CPF VÁLIDO!';
+        resultado.className = 'text-emerald-400';
+      } else {
+        resultado.innerHTML = '❌ CPF INVÁLIDO';
+        resultado.className = 'text-red-400';
+      }
+    }
+
+    // Gera um CPF ao carregar a página
+    window.onload = gerarCPF;
+  </script>
+</body>
+</html>
